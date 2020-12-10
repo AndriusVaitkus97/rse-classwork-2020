@@ -5,40 +5,37 @@ for use as an exercise on refactoring.
 
 This code simulates the swarming behaviour of bird-like objects ("boids").
 """
+import numpy as np
+from random import uniform
 
-from matplotlib import pyplot as plt
-from matplotlib import animation
+n_boids = 50
 
-import random
+boids_x=[uniform(-450,50.0) for x in range(n_boids)]
+boids_y=[uniform(300.0,600.0) for x in range(n_boids)]
+boid_x_velocities=[uniform(0,10.0) for x in range(n_boids)]
+boid_y_velocities=[uniform(-20.0,20.0) for x in range(n_boids)]
 
-boids_x=[random.uniform(-450,50.0) for x in range(50)]
-boids_y=[random.uniform(300.0,600.0) for x in range(50)]
-boid_x_velocities=[random.uniform(0,10.0) for x in range(50)]
-boid_y_velocities=[random.uniform(-20.0,20.0) for x in range(50)]
-boids=(boids_x,boids_y,boid_x_velocities,boid_y_velocities)
+positions = np.array([[boids_x], [boids_y]]).reshape(50,2)
+velocities = np.array([[boid_x_velocities], [boid_y_velocities]]).reshape(50,2)
 
-def update_boids(boids):
-    xs,ys,xvs,yvs=boids
-    # Fly towards the middle
-    for i in range(len(xs)):
-        for j in range(len(xs)):
-            xvs[i]=xvs[i]+(xs[j]-xs[i])*0.01/len(xs)
-    for i in range(len(xs)):
-        for j in range(len(xs)):
-            yvs[i]=yvs[i]+(ys[j]-ys[i])*0.01/len(xs)
-    # Fly away from nearby boids
-    for i in range(len(xs)):
-        for j in range(len(xs)):
-            if (xs[j]-xs[i])**2 + (ys[j]-ys[i])**2 < 100:
-                xvs[i]=xvs[i]+(xs[i]-xs[j])
-                yvs[i]=yvs[i]+(ys[i]-ys[j])
-    # Try to match speed with nearby boids
-    for i in range(len(xs)):
-        for j in range(len(xs)):
-            if (xs[j]-xs[i])**2 + (ys[j]-ys[i])**2 < 10000:
-                xvs[i]=xvs[i]+(xvs[j]-xvs[i])*0.125/len(xs)
-                yvs[i]=yvs[i]+(yvs[j]-yvs[i])*0.125/len(xs)
+def adjust_velocity(velocity, direction, increment):
+    velocity += direction * increment
+    return velocity
+
+
+def update_boids(positions, velocities):
+    n_positions = np.size(positions[1])
+    print(n_positions)
+    for i in range(n_positions):
+        for j in range(n_positions):
+            # Fly towards the middle
+            velocities[i] = adjust_velocity(positions[j]-positions[i], velocities[i], 0.01/np.size(velocities[0]))
+            # Fly away from nearby boids
+            if (positions[j,0]-positions[i,0])**2 + (positions[j,0]-positions[i,0])**2 < 100:
+                velocities[i] = adjust_velocity(positions[i]-positions[j], velocities[i], 1)
+            # Try to match speed with nearby boids
+            if (positions[j,0]-positions[i,0])**2 + (positions[j,0]-positions[i,0])**2 < 10000:
+                velocities[i] = adjust_velocity(velocities[j]-velocities[i], velocities[i], 0.125/np.size(velocities[0]))
     # Move according to velocities
-    for i in range(len(xs)):
-        xs[i]=xs[i]+xvs[i]
-        ys[i]=ys[i]+yvs[i]
+    for i in range(n_positions):
+        positions[i] += velocities[i]
